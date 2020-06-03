@@ -12,9 +12,23 @@ struct Node<T> {
     next: Link<T>,
 }
 
+struct ListIntoIter<T>(List<T>);
+
+impl<T> Iterator for ListIntoIter<T> {
+    type Item = T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.pop()
+    }
+}
+
 impl<T> List<T> {
     fn new() -> Self {
         List { head: None }
+    }
+
+    fn into_iter(self) -> ListIntoIter<T> {
+        ListIntoIter(self)
     }
 
     fn push(&mut self, elem: T) {
@@ -43,6 +57,10 @@ impl<T> List<T> {
     pub fn peek(&self) -> Option<&T> {
         self.head.as_ref().map(|node| &node.elem)
     }
+
+    pub fn peek_mut(&mut self) -> Option<&mut T> {
+        self.head.as_mut().map(|node| &mut node.elem)
+    }
 }
 
 impl<T> Drop for List<T> {
@@ -56,7 +74,7 @@ impl<T> Drop for List<T> {
 
 mod test {
     #[test]
-    fn run_test() {
+    fn test_push_pop() {
         let mut l = super::List::new();
         l.push(45);
         l.push(56);
@@ -65,6 +83,37 @@ mod test {
 
         l.push(55);
         assert_eq!(&55, l.peek().unwrap());
+    }
+    #[test]
+    fn test_peek() {
+        let mut l = super::List::new();
 
+        l.push(55);
+        assert_eq!(&55, l.peek().unwrap());
+    }
+
+    #[test]
+    fn test_peek_mut() {
+        let mut l = super::List::new();
+        l.push(55);
+
+        let e = l.peek_mut().map(|elem| *elem = 100);
+
+        assert_eq!(&100, l.peek().unwrap());
+    }
+
+    #[test]
+    fn test_into_iterator() {
+        let mut l = super::List::new();
+        l.push(45);
+        l.push(56);
+
+        let mut it = l.into_iter();
+        let mut vec: Vec<i32> = vec![];
+        while let Some(elem) = it.next() {
+            vec.push(elem);
+        }
+        assert_eq!(vec[0], 56);
+        assert_eq!(vec[1], 45);
     }
 }
