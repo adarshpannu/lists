@@ -1,5 +1,9 @@
-#![allow(dead_code)]
 #![allow(unused_variables)]
+#![allow(unused_assignments)]
+#![allow(unused_mut)]
+#![allow(dead_code)]
+#![allow(unused_imports)]
+#![allow(unused_labels)]
 
 pub struct List<T> {
     head: Link<T>,
@@ -12,15 +16,68 @@ struct Node<T> {
     next: Link<T>,
 }
 
-struct ListIntoIter<T>(List<T>);
+struct ListIntoIter<T> {
+    list: List<T>,
+}
 
 impl<T> Iterator for ListIntoIter<T> {
     type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.0.pop()
+        self.list.pop()
     }
 }
+
+/* -------- MY ITERATOR ----------- */
+struct ListIter<'a, T> {
+    cur_link: &'a Link<T>
+}
+
+impl<'a, T> Iterator for ListIter<'a, T> {
+    type Item = &'a T;
+    fn next(&mut self) -> Option<Self::Item> {
+        let a = self.cur_link.as_ref().map(|node| {
+            let n = &**node;
+            self.cur_link = &n.next;
+            &n.elem
+        });
+        a 
+    }
+}
+
+impl<T> List<T> {
+    fn iter(&mut self) -> ListIter<T> {
+        ListIter {cur_link: &mut self.head}
+    }
+}
+/* -------- MY ITERATOR ----------- */
+
+/* -------- OTHER ITERATOR -----------
+
+pub struct Iter<'a, T> {
+    next: Option<&'a Node<T>>,
+}
+
+impl<T> List<T> {
+    pub fn iter<'a>(&'a self) -> Iter<'a, T> {
+        Iter { next: self.head.as_ref().map(|node| {
+            let a = &**node;
+            &**node}
+        ) }
+    }
+}
+
+impl<'a, T> Iterator for Iter<'a, T> {
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.next.map(|node| {
+            self.next = node.next.as_ref().map(|node| &**node);
+            &node.elem
+        })
+    }
+}
+  -------- OTHER ITERATOR ----------- */
 
 impl<T> List<T> {
     fn new() -> Self {
@@ -28,15 +85,12 @@ impl<T> List<T> {
     }
 
     fn into_iter(self) -> ListIntoIter<T> {
-        ListIntoIter(self)
+        ListIntoIter { list: self }
     }
 
     fn push(&mut self, elem: T) {
-        let node = Node {
-            elem,
-            next: self.head.take(),
-        };
-        self.head = Some(Box::new(node));
+        let node = Node { elem, next: self.head.take() };
+        self.head = Some(Box::new(node))
     }
 
     fn pop(&mut self) -> Option<T> {
@@ -46,74 +100,56 @@ impl<T> List<T> {
         })
     }
 
-    fn peek0(&self) -> Option<&T> {
-        //&self.head.map(|node| { node.elem })
-        match &self.head {
-            None => None,
-            Some(link) => Some(&link.elem),
-        }
-    }
-
-    pub fn peek(&self) -> Option<&T> {
+    fn peek(&self) -> Option<&T> {
         self.head.as_ref().map(|node| &node.elem)
     }
-
-    pub fn peek_mut(&mut self) -> Option<&mut T> {
-        self.head.as_mut().map(|node| &mut node.elem)
-    }
 }
 
-impl<T> Drop for List<T> {
-    fn drop(&mut self) {
-        let mut cur_link = self.head.take();
-        while let Some(mut node) = cur_link {
-            cur_link = node.next.take();
-        }
-    }
-}
-
-mod test {
+#[cfg(test)]
+mod tests {
     #[test]
     fn test_push_pop() {
-        let mut l = super::List::new();
-        l.push(45);
-        l.push(56);
-        assert_eq!(56, l.pop().unwrap());
-        assert_eq!(45, l.pop().unwrap());
+        let mut lst = super::List::new();
 
-        l.push(55);
-        assert_eq!(&55, l.peek().unwrap());
-    }
-    #[test]
-    fn test_peek() {
-        let mut l = super::List::new();
+        lst.push(23);
+        lst.push(57);
 
-        l.push(55);
-        assert_eq!(&55, l.peek().unwrap());
+        assert_eq!(Some(&57), lst.peek());
+        assert_eq!(Some(57), lst.pop());
+
+        assert_eq!(Some(&23), lst.peek());
+        assert_eq!(Some(23), lst.pop());
+
+        assert_eq!(None, lst.pop());
+        assert_eq!(None, lst.peek());
     }
 
     #[test]
-    fn test_peek_mut() {
-        let mut l = super::List::new();
-        l.push(55);
+    fn test_into_iter() {
+        let mut lst = super::List::new();
 
-        let e = l.peek_mut().map(|elem| *elem = 100);
+        lst.push(23);
+        lst.push(57);
 
-        assert_eq!(&100, l.peek().unwrap());
+        let mut iter = lst.into_iter();
+        assert_eq!(iter.next(), Some(57));
+        assert_eq!(iter.next(), Some(23));
+        assert_eq!(iter.next(), None);
+        assert_eq!(iter.next(), None);
     }
 
     #[test]
-    fn test_into_iterator() {
-        let mut l = super::List::new();
-        l.push(45);
-        l.push(56);
+    fn test_iter() {
+        let mut lst = super::List::new();
 
-        let mut it = l.into_iter();
-        let mut vec: Vec<i32> = vec![];
-        while let Some(elem) = it.next() {
-            vec.push(elem);
-        }
-        assert_eq!(vec[0], 56);
-        assert_eq!(vec[1], 45);
+        lst.push(23);
+        lst.push(57);
+
+        let mut iter = lst.iter();
+        
+        assert_eq!(iter.next(), Some(&57));
+        assert_eq!(iter.next(), Some(&23));
+        //assert_eq!(iter.next(), None);
+        //assert_eq!(iter.next(), None);
     }
 }

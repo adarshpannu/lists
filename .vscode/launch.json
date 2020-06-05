@@ -7,19 +7,8 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug unit tests in library 'rustlists'",
-            "cargo": {
-                "args": [
-                    "test",
-                    "--no-run",
-                    "--lib",
-                    "--package=rustlists"
-                ],
-                "filter": {
-                    "name": "rustlists",
-                    "kind": "lib"
-                }
-            },
+            "name": "Debug",
+            "program": "${workspaceFolder}/<your program>",
             "args": [],
             "cwd": "${workspaceFolder}"
         }

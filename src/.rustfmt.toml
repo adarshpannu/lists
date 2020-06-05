@@ -1,0 +1,6 @@
+
+# Refs: https://internals.rust-lang.org/t/running-rustfmt-on-rust-lang-rust-and-other-rust-lang-repositories/8732/72
+use_small_heuristics = "Max"
+
+edition = "2018"
+tab_spaces = 4

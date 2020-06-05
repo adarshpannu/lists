@@ -1,0 +1,7 @@
+{
+    "rust-analyzer.inlayHints.enable": true,
+    "workbench.colorCustomizations": {
+        "rust_analyzer.inlayHint": "#e6d7d7"
+    },
+    
+}
